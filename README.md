@@ -22,6 +22,7 @@ PaddlePaddle dynamic graph is easy to use, and quite similar with pytorch. Meanw
 
 2. download cats dataset
    ```
+   download and unzip file to code folder
    链接：https://pan.baidu.com/s/1cE3AbX1UzDsbeD2pTbFSPw 
    提取码：i29d 
    ```
