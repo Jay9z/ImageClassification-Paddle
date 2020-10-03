@@ -14,7 +14,6 @@ logger.addHandler(handler)
 
 
 def show_image(image,title):
-    image = np.array(image).transpose((1,2,0))
     plt.imshow(image)
     plt.title("cat {}".format(title))
 

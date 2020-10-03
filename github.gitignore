@@ -1,5 +1,11 @@
-result
-data
-work
+# Folders
+result\
+data\
+work\
+cat_12/
 
+# Test file
 func_test.py
+
+# weights
+Cats.zip

@@ -10,15 +10,14 @@ from dataset import *
 
 
 BATCH_SIZE = 32
-EPOCH = 100
-EPOCH_SIZE = 2160*0.7
-BASE_LR = 0.001
+EPOCH = 80
+EPOCH_SIZE = 2160*0.8
+BASE_LR = 0.0001  # batch_size=1,GPU=1
 RESUME = True
 
 shuffled_reader = fluid.io.shuffle(train_reader,1000)
 train_batch_reader = fluid.io.batch(shuffled_reader,BATCH_SIZE)
 val_batch_reader = fluid.io.batch(val_reader,1)
-
 
 ## Train model
 DEVICE = 'cuda'
@@ -32,7 +31,6 @@ with fluid.dygraph.guard(gpu_place):
     if os.path.exists('result/cats_model.pdparams') and RESUME:
         cats.load_dict(fluid.load_dygraph('result/cats_model')[0])
         logger.info("loading model weight")
-    logger.info("under guard")
     cce = fluid.layers.cross_entropy
     acc = fluid.layers.accuracy
 
