@@ -4,7 +4,7 @@
 import paddle.fluid as fluid
 from utilis import logger
 from network import ResNet
-from dataset import train_reader, val_reader, test_reader, test_list
+from dataset import Dataset
 import numpy as np
 import pandas as pd
 import os
@@ -15,10 +15,12 @@ EPOCH = 100
 EPOCH_SIZE = 2160 * 0.8
 BASE_LR = 0.001  # batch_size=1,GPU=1
 RESUME = True
-
-shuffled_reader = fluid.io.shuffle(train_reader, 1000)
+dataset = Dataset()
+shuffled_reader = fluid.io.shuffle(dataset.train_reader, 1000)
 train_batch_reader = fluid.io.batch(shuffled_reader, BATCH_SIZE)
-val_batch_reader = fluid.io.batch(val_reader, 1)
+val_batch_reader = fluid.io.batch(dataset.val_reader, 1)
+test_batch_reader = fluid.io.batch(dataset.test_reader, 1)
+
 
 # Train model
 DEVICE = "cuda"
@@ -27,7 +29,7 @@ logger.info("before training")
 with fluid.dygraph.guard(gpu_place):
     # cats = LeNet(num_classes=12)
     # cats = VGG16(num_classes=12)
-    cats = ResNet(num_classes=12)
+    cats = ResNet(num_classes=dataset.get_class_number())
 
     if os.path.exists("result/cats_model.pdparams") and RESUME:
         cats.load_dict(fluid.load_dygraph("result/cats_model")[0])
@@ -109,22 +111,25 @@ with fluid.dygraph.guard(gpu_place):
             accuracy_max = accuracy_cur
             fluid.save_dygraph(cats.state_dict(), "result/cats_model")
             predict_class = []
-            for _, data in enumerate(test_reader()):
-                x = np.array([item for item in data], dtype="float32").reshape(
-                    (-1, 3, 224, 224)
-                )
+            test_list = []
+            for _, data in enumerate(test_batch_reader()):
+                x = np.array([item[0] for item in data], dtype="float32")\
+                    .reshape((-1, 3, 224, 224)
+                        )
+                paths = [item[1] for item in data]
+
                 x = fluid.dygraph.to_variable(x)
                 logits = cats(x)
                 pred = fluid.layers.softmax(logits)
-                # y_index = np.argmax(pred.numpy(),axis=1)
-                # predict_class.extend(y_index)
+
                 y_index = np.argmax(pred.numpy())
                 predict_class.append(y_index)
+                test_list.append(paths)
 
             # Save predict results
-            test_list = np.array(test_list).reshape((-1, 1))
+            test_array = np.array(test_list).reshape((-1, 1))
             predict_class = np.array(predict_class).reshape((-1, 1))
-            predict_result = np.concatenate((test_list, predict_class), axis=1)
+            predict_result = np.concatenate((test_array, predict_class), axis=1)
             if not os.path.exists("result"):
                 os.makedirs("result")
             # predict_result.tofile("result/submission.txt",sep=' ')
